@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple User CRUD</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f7f7f7;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    form {
+      background: #ffffff;
+      padding: 15px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+
+    input, button {
+      padding: 8px;
+      margin: 6px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background: #f0f0f0;
+    }
+
+    .actions button {
+      width: auto;
+      margin-right: 5px;
+      padding: 6px 10px;
+    }
+
+    .delete {
+      background: #dc3545;
+    }
+
+    .delete:hover {
+      background: #b52a37;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h2>User CRUD</h2>
+
+  <form id="userForm">
+    <input type="hidden" id="userId">
+
+    <input type="text" id="name" placeholder="Name" required>
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="number" id="age" placeholder="Age">
+
+    <button type="submit">Save User</button>
+  </form>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Age</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="usersBody"></tbody>
+  </table>
+
+<script>
+  const API_URL = "/api/users";
+
+  // LOAD ALL USERS
+  async function loadUsers() {
+    try {
+      const res = await fetch(API_URL);
+      const result = await res.json();
+
+      const users = result.data;
+
+      const tbody = document.getElementById("usersBody");
+      tbody.innerHTML = "";
+
+      users.forEach(user => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${user._id}</td>
+          <td>${user.name}</td>
+          <td>${user.email}</td>
+          <td>${user.age ?? ""}</td>
+          <td class="actions">
+            <button onclick="editUser('${user._id}')">Edit</button>
+            <button class="delete" onclick="deleteUser('${user._id}')">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+    } catch (error) {
+      alert("Error loading users");
+      console.error(error);
+    }
+  }
+
+  // CREATE / UPDATE USER
+  document.getElementById("userForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const id = document.getElementById("userId").value;
+
+    const user = {
+      name: document.getElementById("name").value.trim(),
+      email: document.getElementById("email").value.trim(),
+      age: document.getElementById("age").value
+        ? parseInt(document.getElementById("age").value)
+        : null
+    };
+
+    try {
+      const res = await fetch(id ? `${API_URL}/${id}` : API_URL, {
+        method: id ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(user)
+      });
+
+      if (!res.ok) throw new Error("Request failed");
+
+      document.getElementById("userForm").reset();
+      document.getElementById("userId").value = "";
+
+      loadUsers();
+    } catch (error) {
+      alert("Failed to save user");
+      console.error(error);
+    }
+  });
+
+  // EDIT USER
+  async function editUser(id) {
+    const res = await fetch(`${API_URL}/${id}`);
+    const result = await res.json();
+
+    const user = result.data;
+
+    document.getElementById("userId").value = user._id;
+    document.getElementById("name").value = user.name;
+    document.getElementById("email").value = user.email;
+    document.getElementById("age").value = user.age ?? "";
+  }
+
+  // DELETE USER
+  async function deleteUser(id) {
+    if (!confirm("Are you sure you want to delete this user?")) return;
+
+    await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+    loadUsers();
+  }
+
+  // INITIAL LOAD
+  loadUsers();
+</script>
+
+</body>
+</html>
