@@ -14,9 +14,14 @@ app.use(express.json());
 
 
 //routes
-
+app.use('/api/users',userRoutes);
 
 //Databasae Connection
+
+mongoose.connect(process.env.MONGO_URI)
+.then(()=>console.log("MONOG DB Connected"))
+.catch(err=>console.log(err));
+
 
 
 const PORT=process.env.PORT || 5000;

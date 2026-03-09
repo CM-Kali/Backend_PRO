@@ -8,6 +8,7 @@ exports.createUser=async(req,res)=>{
         const user=new User(req.body);
         const savedUser=await user.save();
         res.status(201).json(savedUser);
+        console.log("User created");
 
     }
     catch(err){
